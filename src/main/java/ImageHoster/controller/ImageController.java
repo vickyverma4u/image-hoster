@@ -1,10 +1,12 @@
 package ImageHoster.controller;
 
+import ImageHoster.model.Comment;
 import ImageHoster.model.Image;
 import ImageHoster.model.Tag;
 import ImageHoster.model.User;
 import ImageHoster.service.ImageService;
 import ImageHoster.service.TagService;
+import java.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -49,8 +51,10 @@ public class ImageController {
     @RequestMapping("/images/{imageId}")
     public String showImage(@PathVariable Integer imageId, Model model) {
         Image image = imageService.getImageById(imageId);
+        List<Comment> comments = imageService.getCommentsByImageId(imageId);
         model.addAttribute("image", image);
         model.addAttribute("tags", image.getTags());
+        model.addAttribute("comments", comments);
         return "images/image";
     }
 
@@ -105,6 +109,7 @@ public class ImageController {
         } else {
             model.addAttribute("editError", true);
             model.addAttribute("tags", image.getTags());
+            model.addAttribute("comments",imageService.getCommentsByImageId(imageId));
             return "/images/image";
         }
     }
@@ -151,6 +156,28 @@ public class ImageController {
     public String deleteImageSubmit(@RequestParam(name = "imageId") Integer imageId) {
         imageService.deleteImage(imageId);
         return "redirect:/images";
+    }
+
+    /**
+     *
+     * This Controller method posts a new comment on the image
+     *
+     * @param imageId           this is imageId from path
+     * @param imageTitle        this is imageTitle from path
+     * @param comment           this is the comment from textarea
+     * @param httpSession       to get the loggedin User
+     * @return
+     */
+    @RequestMapping(value = "/image/{imageId}/{imageTitle}/comments", method = RequestMethod.POST)
+    public String postComment(@PathVariable Integer imageId, @PathVariable String imageTitle, @RequestParam("comment") String comment, HttpSession httpSession) {
+        User user = (User) httpSession.getAttribute("loggeduser");
+        Comment newComment = new Comment();
+        newComment.setCreatedDate(LocalDate.now());
+        newComment.setUser(user);
+        newComment.setImage(imageService.getImageById(imageId));
+        newComment.setText(comment);
+        imageService.postComment(newComment);
+        return "redirect:/images/" + imageId;
     }
 
 
