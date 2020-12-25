@@ -5,6 +5,8 @@ import ImageHoster.model.User;
 import ImageHoster.model.UserProfile;
 import ImageHoster.service.ImageService;
 import ImageHoster.service.UserService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -40,10 +42,14 @@ public class UserController {
   // directs to login page
   @RequestMapping(value = "users/registration", method = RequestMethod.POST)
   public String registerUser(User user, Model model) {
-    boolean strongPassword = userService.registerUser(user);
+
+    String password = user.getPassword();
+    boolean strongPassword = checkPasswordStrength(password);
     if (strongPassword) {
-      return "redirect:/users/login";
-    } else {
+      userService.registerUser(user);
+      return "users/login";
+    }
+    else {
       model.addAttribute("User", user);
       model.addAttribute(
           "passwordTypeError",
@@ -93,5 +99,28 @@ public class UserController {
     List<Image> images = imageService.getAllImages();
     model.addAttribute("images", images);
     return "index";
+  }
+
+  private boolean checkPasswordStrength(String password) {
+
+    // Regex to check valid password.
+    String regex = "^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[!@#$%^&*()_+]).{3,}$";
+
+    // Compile the ReGex
+    Pattern p = Pattern.compile(regex);
+
+    // If the password is empty return false
+    if (password == null) {
+      return false;
+    }
+
+    // Pattern class contains matcher() method
+    // to find matching between given password
+    // and regular expression.
+    Matcher m = p.matcher(password);
+
+    // Return if the password
+    // matched the ReGex
+    return m.matches();
   }
 }
