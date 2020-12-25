@@ -4,6 +4,7 @@ import ImageHoster.model.Comment;
 import ImageHoster.model.Image;
 import ImageHoster.model.Tag;
 import ImageHoster.model.User;
+import ImageHoster.service.CommentService;
 import ImageHoster.service.ImageService;
 import ImageHoster.service.TagService;
 import java.time.LocalDate;
@@ -26,6 +27,8 @@ public class ImageController {
   @Autowired private ImageService imageService;
 
   @Autowired private TagService tagService;
+
+  @Autowired private CommentService commentService;
 
   // This method displays all the images in the user home page after successful login
   @RequestMapping("images")
@@ -52,7 +55,7 @@ public class ImageController {
   @RequestMapping("/images/{imageId}")
   public String showImage(@PathVariable Integer imageId, Model model) {
     Image image = imageService.getImageById(imageId);
-    List<Comment> comments = imageService.getCommentsByImageId(imageId);
+    List<Comment> comments = commentService.getCommentsByImageId(imageId);
     model.addAttribute("image", image);
     model.addAttribute("tags", image.getTags());
     model.addAttribute("comments", comments);
@@ -124,9 +127,9 @@ public class ImageController {
       model.addAttribute("tags", tags);
       return "images/edit";
     } else {
-      model.addAttribute("editError", true);
+      model.addAttribute("editError", "Only the owner of the image can edit the image");
       model.addAttribute("tags", image.getTags());
-      model.addAttribute("comments", imageService.getCommentsByImageId(imageId));
+      model.addAttribute("comments", commentService.getCommentsByImageId(imageId));
       return "/images/image";
     }
   }
@@ -171,7 +174,7 @@ public class ImageController {
     updatedImage.setDate(new Date());
 
     imageService.updateImage(updatedImage);
-    return "redirect:/images/" + updatedImage.getTitle();
+    return "redirect:/images/" + updatedImage.getId();
   }
 
   // This controller method is called when the request pattern is of type 'deleteImage' and also the
@@ -190,37 +193,14 @@ public class ImageController {
       return "redirect:/images";
     } else {
       model.addAttribute("image", image);
-      model.addAttribute("deleteError", true);
+      model.addAttribute("deleteError", "Only the owner of the image can delete the image");
       model.addAttribute("tags", image.getTags());
-      model.addAttribute("comments", imageService.getCommentsByImageId(imageId));
+      model.addAttribute("comments", commentService.getCommentsByImageId(imageId));
       return "/images/image";
     }
   }
 
-  /**
-   * This Controller method posts a new comment on the image
-   *
-   * @param imageId this is imageId from path
-   * @param imageTitle this is imageTitle from path
-   * @param comment this is the comment from textarea
-   * @param httpSession to get the loggedin User
-   * @return
-   */
-  @RequestMapping(value = "/image/{imageId}/{imageTitle}/comments", method = RequestMethod.POST)
-  public String postComment(
-      @PathVariable Integer imageId,
-      @PathVariable String imageTitle,
-      @RequestParam("comment") String comment,
-      HttpSession httpSession) {
-    User user = (User) httpSession.getAttribute("loggeduser");
-    Comment newComment = new Comment();
-    newComment.setCreatedDate(LocalDate.now());
-    newComment.setUser(user);
-    newComment.setImage(imageService.getImageById(imageId));
-    newComment.setText(comment);
-    imageService.postComment(newComment);
-    return "redirect:/images/" + imageId;
-  }
+
 
   // This method converts the image to Base64 format
   private String convertUploadedFileToBase64(MultipartFile file) throws IOException {

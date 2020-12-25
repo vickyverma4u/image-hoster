@@ -1,4 +1,3 @@
-/*
 package ImageHoster.controller;
 
 
@@ -62,7 +61,7 @@ public class CommentControllerTest {
         this.mockMvc.perform(post("/image/1/new/comments")
                 .param("comment", "This comment is for testing purpose")
                 .session(session))
-                .andExpect(redirectedUrl("/images/1/new"));
+                .andExpect(redirectedUrl("/images/1"));
     }
 }
-*/
+
